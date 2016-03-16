@@ -1,0 +1,17 @@
+-ARP HEADER-
+proto type: 800
+hw addr length: 6
+proto addr length: 4
+
+...
+Opcode is 1 for sending?
+Opcode changes to 2 for reply
+
+
+-ICMP echo request-
+type: 8
+code: 0
+(networksorcery.com/enp/protocol/icmp/msg8.htm)
+
+-echo reply-
+same as echo request but recompute icmp checksum
