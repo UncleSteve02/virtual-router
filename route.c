@@ -5,9 +5,14 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
+#include <netinet/ip.h>
+#include <net/if_arp.h>
 
 int main(){
   int packet_socket;
+
+  struct arphdr recv_arphdr;
+  struct ether_header recv_ethhdr;
   //get list of interfaces (actually addresses)
   struct ifaddrs *ifaddr, *tmp;
   if(getifaddrs(&ifaddr)==-1){
@@ -74,6 +79,23 @@ int main(){
       continue;
     //start processing all others
     printf("Got a %d byte packet\n", n);
+
+    printf("sll_addr <%s>\n", recvaddr.sll_addr);
+    printf("sll_protocol <%x>\n\n", recvaddr.sll_protocol);
+    
+    memcpy(&recv_ethhdr, buf, sizeof(recv_ethhdr));
+    printf("ether_dhost <%u>\n", recv_ethhdr.ether_dhost);
+    printf("ether_shost <%u>\n", recv_ethhdr.ether_shost);
+    printf("ether_type  <%u>\n\n", recv_ethhdr.ether_type);
+
+
+    memcpy(&recv_arphdr, &buf[sizeof(recv_ethhdr)], sizeof(recv_arphdr));
+    printf("ar_hrd <%u>\n", recv_arphdr.ar_hrd);
+    printf("ar_pro <%u>\n", recv_arphdr.ar_pro);
+    printf("ar_hln <%u>\n", recv_arphdr.ar_hln);
+    printf("ar_pln <%u>\n", recv_arphdr.ar_pln);
+    printf("ar_op  <%u>\n\n", recv_arphdr.ar_op);
+
 
     //what else to do is up to you, you can send packets with send,
     //just like we used for TCP sockets (or you can use sendto, but it
