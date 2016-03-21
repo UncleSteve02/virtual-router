@@ -13,6 +13,7 @@ int main(){
 
   struct arphdr recv_arphdr;
   struct ether_header recv_ethhdr;
+  struct ether_header send_ethhdr;
   //get list of interfaces (actually addresses)
   struct ifaddrs *ifaddr, *tmp;
   if(getifaddrs(&ifaddr)==-1){
@@ -83,18 +84,30 @@ int main(){
     printf("sll_addr <%s>\n", recvaddr.sll_addr);
     printf("sll_protocol <%x>\n\n", recvaddr.sll_protocol);
     
-    memcpy(&recv_ethhdr, buf, sizeof(recv_ethhdr));
-    printf("ether_dhost <%u>\n", recv_ethhdr.ether_dhost);
-    printf("ether_shost <%u>\n", recv_ethhdr.ether_shost);
-    printf("ether_type  <%u>\n\n", recv_ethhdr.ether_type);
+    memcpy(&recv_ethhdr, &buf, sizeof(recv_ethhdr));
+    printf("ether_dhost <%x>\n", recv_ethhdr.ether_dhost);
+    printf("ether_shost <%x>\n", recv_ethhdr.ether_shost);
+    printf("ether_type  <%x>\n\n", recv_ethhdr.ether_type);
 
+    memcpy(send_ethhdr.ether_dhost, recv_ethhdr.ether_shost, sizeof(send_ethhdr.ether_dhost));
+    memcpy(send_ethhdr.ether_shost, recv_ethhdr.ether_dhost, sizeof(send_ethhdr.ether_shost));
+    send_ethhdr.ether_type = recv_ethhdr.ether_type;
+    memcpy(&buf, &send_ethhdr, sizeof(send_ethhdr));
 
     memcpy(&recv_arphdr, &buf[sizeof(recv_ethhdr)], sizeof(recv_arphdr));
-    printf("ar_hrd <%u>\n", recv_arphdr.ar_hrd);
-    printf("ar_pro <%u>\n", recv_arphdr.ar_pro);
-    printf("ar_hln <%u>\n", recv_arphdr.ar_hln);
-    printf("ar_pln <%u>\n", recv_arphdr.ar_pln);
-    printf("ar_op  <%u>\n\n", recv_arphdr.ar_op);
+    printf("ar_hrd <%x>\n", recv_arphdr.ar_hrd);
+    printf("ar_pro <%x>\n", recv_arphdr.ar_pro);
+    printf("ar_hln <%x>\n", recv_arphdr.ar_hln);
+    printf("ar_pln <%x>\n", recv_arphdr.ar_pln);
+    printf("ar_op  <%x>\n\n", recv_arphdr.ar_op);
+
+    unsigned short int reply = 0x0200;
+    printf("reply <%x>\n\n", reply);
+    recv_arphdr.ar_op = reply;
+
+    memcpy(&buf[sizeof(recv_ethhdr)], &recv_arphdr, sizeof(recv_arphdr));
+
+    sendto(packet_socket, buf, n,0,(struct sockaddr*)&recvaddr, sizeof(recvaddr));
 
 
     //what else to do is up to you, you can send packets with send,
