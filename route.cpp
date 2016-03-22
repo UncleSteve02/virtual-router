@@ -93,7 +93,7 @@ int main(){
   //for the project you will probably want to look at more (to do so,
   //a good way is to have one socket per interface and use select to
   //see which ones have data)
-  printf("Ready to recieve now\n");
+  printf("\nReady to recieve now\n");
   while(1){
     char buf[1500];
     char senderMac[ETH_ALEN] = {0};
@@ -125,6 +125,8 @@ int main(){
 
     // If it is a ARP type
     if (recv_ethhdr.ether_type == 0x608) {
+      printf("ethernet type: ARP\n");
+
       int bufPos;
      
       // Get data from arp header
@@ -157,6 +159,8 @@ int main(){
 
       send(packet_socket, buf, n, 0);
     } else if (recv_ethhdr.ether_type == 0x0008) { // IP
+      printf("ethernet type: IP\n");
+
       int bufPos = sizeof(struct ether_header);
 
       struct iphdr send_iphdr;
