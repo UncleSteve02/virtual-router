@@ -35,40 +35,49 @@ using namespace std;
 struct icmphdr {
   u_int8_t type; 
   u_int8_t code;
-  u_int16_t checksum;
-  u_int32_t data;
 };
 
 //--------------------------------------------------------------------
 //------------------------ Declare Constants -------------------------
 //--------------------------------------------------------------------
-#define ICMP_PING 0;
-#define ICMP_FWRD 1;
-#define ICMP_TTLE 2;
-#define ICMP_NETU 3;
-#define ICMP_HSTU 4;
+#define ICMP_PING 0
+#define ICMP_PREQ 1
+#define ICMP_TTLE 2
+#define ICMP_NETU 3
+#define ICMP_HSTU 4
 
 //--------------------------------------------------------------------
 //------------------------- build_icmp_hdr ---------------------------
 //--------------------------------------------------------------------
-int build_icmp_hdr(int job, char *icmp_message){
+int build_icmp_hdr(int job, char *buf) {
+    int ret = 0;
+    struct icmphdr icmp;
   
-  int ret = 0;
-  
-  switch(job){
-  
-  case ICMP_PING: // Build ping icmp
-    break;
-  case ICMP_FWRD: // Build forward icmp
-    break;
-  case ICMP_TTLE: // Build time exceeded icmp
-    break;
-  case ICMP_NETU: // Build network unreachable icmp
-    break;
-  case ICMP_HSTU: // Build host unreachable icmp
-    break;
+    switch(job){
 
-  }
+    case ICMP_PING: // Build ping icmp
+	icmp.type = 0;
+	icmp.code = 0;
+	break;
+    case ICMP_PREQ: // Build ping request icmp
+	icmp.type = 8;
+	icmp.code = 0;
+	break;
+    case ICMP_TTLE: // Build time exceeded icmp
+	icmp.type = 11;
+	icmp.code = 0;
+	break;
+    case ICMP_NETU: // Build network unreachable icmp
+	icmp.type = 3;
+	icmp.code = 0;
+	break;
+    case ICMP_HSTU: // Build host unreachable icmp
+	icmp.type = 3;
+	icmp.code = 1;
+	break;
+    } 
 
-  return ret;
+    memcpy(&buf[sizeof(struct ether_header)+sizeof(struct iphdr)], &icmp, sizeof(struct icmphdr));
+
+    return ret;
 }

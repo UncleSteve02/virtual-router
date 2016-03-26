@@ -42,10 +42,6 @@ void get_send_iphdr(char * buf) {
 
   // Copy send_iphdr into buf
   memcpy(&buf[sizeof(struct ether_header)], &send_iphdr, sizeof(struct iphdr));
-
-  // Update icmp type in icmp header
-  unsigned short int echo_reply = 0x0000;
-  memcpy(&buf[bufPos], &echo_reply, sizeof(echo_reply));
 }
 
 bool check_checksum(char * buf) {
