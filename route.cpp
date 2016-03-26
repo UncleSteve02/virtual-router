@@ -52,7 +52,7 @@ using namespace std;
 string get_router_name(void);
 bool is_for_me(string ip);
 int get_routing_table_ref(char *router_name, char *dest_ip, char *interface_name, char *arp_ip);
-int get_mac_addr(char *interface_name, char* arp_ip);
+int get_mac_addr(char *interface_name, char* arp_ip, char* dest_mac);
 
 
 
@@ -168,6 +168,8 @@ int main(){
     fd_set tempSetRead = sockets; // Variable to hold ready to read sockets
     fd_set tempSetWrite = sockets;// Variable to hold ready to write to sockets
     char interface_name[64];
+    char dest_mac[6];
+    
 
     // See what sockets are ready for read/write
     select(FD_SETSIZE, &tempSetRead, &tempSetWrite, NULL, NULL);
@@ -227,10 +229,15 @@ int main(){
 	              // Check routing table and get interface and ip 
 	              err = get_routing_table_ref((char *)get_router_name().c_str(), (char *)get_dst_ip(buf).c_str(), interface_name, arp_ip);
 	              if (err == 0) {
-	                // Build ARP packet to get mac address of next location
-
-
-	                // Up ethernet header to contain the found mac address
+			  // Build ARP packet to get mac address of next location
+			  err = get_mac_addr(interface_name, arp_ip, dest_mac);
+			  if( err == 0){
+			  
+			  }
+			  else{
+			      build_icmp_hdr(ICMP_HSTU, buf);
+			  }
+			  // Up ethernet header to contain the found mac address
 
 	              } else { // If there was an error send the proper icmp message
 	                printf("Got an error from the routing table\n");
@@ -241,6 +248,10 @@ int main(){
 
               check_checksum(buf);
               get_send_iphdr(buf);
+
+
+
+
               send(packet_socket, buf, n, 0);
             }	
           }
@@ -346,7 +357,7 @@ int get_routing_table_ref(char *router_name, char *dest_ip, char *interface_name
   return ret;
 }
 
-int get_mac_addr(char *interface_name, char* arp_ip){
+int get_mac_addr(char *interface_name, char* arp_ip, char* dest_mac){
 
     int ret = 0;
     int bufPos = 0;
@@ -390,12 +401,9 @@ int get_mac_addr(char *interface_name, char* arp_ip){
     for( int i = 0; i < FD_SETSIZE; i++){
 
 	if( strlen(interfaces[i].c_str()) > 0){
-	    //printf("%s%d\n", interfaces[i].c_str(), strlen(interfaces[i].c_str()));
-	    //printf("%s%d\n", interface_name, strlen(interface_name));
+
 	    if(! strcmp(interfaces[i].c_str(), interface_name)){
-		printf("Sending arp message\n");
 		ret  = send(i, buf, bufPos, 0);
-		printf("send return %d\n", ret);
 	    }
 	}
     }
