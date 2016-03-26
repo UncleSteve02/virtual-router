@@ -50,6 +50,8 @@ using namespace std;
 //----------------------- Function Prototypes ------------------------
 //--------------------------------------------------------------------
 int get_routing_table_ref(char *router_name, char *dest_ip, char *interface_name, char *arp_ip);
+int get_mac_addr(char *interface_name, char* arp_ip);
+
 
 //--------------------------------------------------------------------
 //------------------------- Global Variables -------------------------
@@ -218,10 +220,11 @@ int main(){
 			} 
 			else { // Otherwise, you must recompute the IP checksum due to the changed TTL.
 			    // Check routing table and get interface and ip 
-			    err = get_routing_table_ref("r1", "10.12.0.3", interface_name, arp_ip);
+			    err = get_routing_table_ref("r1", "10.2.0.5", interface_name, arp_ip);
 			    if( err == 0){
 				// Build ARP packet to get mac address of next location
-			    
+				printf("Get mac address\n");
+				err = get_mac_addr(interface_name, arp_ip);
 
 				// Up ethernet header to contain the found mac address
 
@@ -319,6 +322,67 @@ int get_routing_table_ref(char *router_name, char *dest_ip, char *interface_name
     else{
 	ret = -1;
     }
+
+    return ret;
+}
+
+int get_mac_addr(char *interface_name, char* arp_ip){
+
+    int ret = 0;
+    int bufPos = 0;
+    struct ether_header send_ethhdr;
+    struct arphdr arp_hdr;
+    char buf[1500];
+    struct sockaddr_in ipaddr;
+
+    // Build ethernet header
+    unsigned char mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    memcpy(send_ethhdr.ether_dhost, mac, sizeof(send_ethhdr.ether_dhost));
+    memcpy(send_ethhdr.ether_shost, mac_addrs[interface_name].c_str(), sizeof(send_ethhdr.ether_shost));
+    send_ethhdr.ether_type = 0x608;
+    memcpy(buf, &send_ethhdr, sizeof(struct ether_header));
+    bufPos = sizeof(struct ether_header);
+
+    // Build arp header
+    arp_hdr.ar_hrd = 0x0100;
+    arp_hdr.ar_pro = 0x0008;
+    arp_hdr.ar_hln = 0x06;
+    arp_hdr.ar_pln = 0x04;
+    arp_hdr.ar_op = 0x0100;
+    memcpy(&buf[bufPos], &arp_hdr, sizeof(struct arphdr));
+
+    unsigned char target_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    // Add arp Data
+    bufPos += sizeof(struct arphdr);
+    memcpy(&buf[bufPos], mac_addrs[interface_name].c_str(), arp_hdr.ar_hln);
+    bufPos += arp_hdr.ar_hln;
+    ipaddr.sin_addr.s_addr = inet_addr(ip_addrs[interface_name].c_str());
+    memcpy(&buf[bufPos], &ipaddr.sin_addr.s_addr, sizeof(ipaddr.sin_addr.s_addr));
+    bufPos += arp_hdr.ar_pln;
+    memcpy(&buf[bufPos], target_mac, arp_hdr.ar_hln);
+    bufPos += arp_hdr.ar_hln;
+    ipaddr.sin_addr.s_addr = inet_addr(arp_ip);
+    memcpy(&buf[bufPos], &ipaddr.sin_addr.s_addr, sizeof(ipaddr.sin_addr.s_addr));
+    bufPos += arp_hdr.ar_pln;
+
+    // Send arp message 
+    for( int i = 0; i < FD_SETSIZE; i++){
+
+	if( strlen(interfaces[i].c_str()) > 0){
+	    //printf("%s%d\n", interfaces[i].c_str(), strlen(interfaces[i].c_str()));
+	    //printf("%s%d\n", interface_name, strlen(interface_name));
+	    if(! strcmp(interfaces[i].c_str(), interface_name)){
+		printf("Sending arp message\n");
+		ret  = send(i, buf, bufPos, 0);
+		printf("send return %d\n", ret);
+	    }
+	}
+    }
+
+    // Wait one second if nothing is recieved return error
+
+    // Read arp reply and get mac address
 
     return ret;
 }
