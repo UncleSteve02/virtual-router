@@ -230,7 +230,7 @@ int main(){
                 printf("its all mine!\n");
 		memcpy(&tmp_iphdr, &buf[sizeof(struct ether_header)], sizeof(struct iphdr)); 
 		// ckeck to see if it is a ping if not then do nothing 
-		if( tmp_iphdr.protocol != 0x01){
+		if( tmp_iphdr.protocol != 0x01 ||  buf[sizeof(struct ether_header)+sizeof(struct iphdr)] != 0x08){
 		    continue;
 		}
 		// If it is a ping reformate the ip head and icmp header 
