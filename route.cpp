@@ -171,6 +171,7 @@ int main(){
     fd_set tempSetWrite = sockets;// Variable to hold ready to write to sockets
     char interface_name[64];
     u_int8_t dest_mac[ETH_ALEN];
+    struct iphdr tmp_iphdr;
 
 
     // See what sockets are ready for read/write
@@ -227,7 +228,15 @@ int main(){
             } else { // Otherwise, you must recompute the IP checksum due to the changed TTL.
               if (is_for_me(get_dst_ip(buf))) {
                 printf("its all mine!\n");
+		memcpy(&tmp_iphdr, &buf[sizeof(struct ether_header)], sizeof(struct iphdr)); 
+		// ckeck to see if it is a ping if not then do nothing 
+		if( tmp_iphdr.protocol != 0x01){
+		    continue;
+		}
+		// If it is a ping reformate the ip head and icmp header 
+		build_icmp_hdr(ICMP_PING, buf);
               	get_send_iphdr(buf);
+		strcpy(interface_name, interfaces[packet_socket].c_str());
               } else {
                 // Check routing table and get interface and ip 
                 err = get_routing_table_ref((char *)get_router_name().c_str(), (char *)get_dst_ip(buf).c_str(), interface_name, arp_ip);
@@ -235,8 +244,8 @@ int main(){
                   // Build ARP packet to get mac address of next location
                   err = get_mac_addr(interface_name, arp_ip, dest_mac);
                   if (err == 0) {
-                  	// Up ethernet header to contain the found mac address
-										set_eth_addrs(buf, dest_mac, mac_addrs[interface_name].c_str());
+		      // Up ethernet header to contain the found mac address
+		      set_eth_addrs(buf, dest_mac, mac_addrs[interface_name].c_str());
                   } else { // If there was an error send the proper icmp message
                     build_icmp_hdr(ICMP_HSTU, buf);
                   }
@@ -251,16 +260,16 @@ int main(){
               check_checksum(buf);
 
               // Send  message 
-						  for( int i = 0; i < FD_SETSIZE; i++){
+	      for( int i = 0; i < FD_SETSIZE; i++){
 
-						    if( strlen(interfaces[i].c_str()) > 0){
+		  if( strlen(interfaces[i].c_str()) > 0){
 
-						      if(! strcmp(interfaces[i].c_str(), interface_name)){
-						        send(i, buf, n, 0);
-						        break;
-						      }
-						    }
-						  }
+		      if(! strcmp(interfaces[i].c_str(), interface_name)){
+			  send(i, buf, n, 0);
+			  break;
+		      }
+		  }
+	      }
             }	
           }
         }
