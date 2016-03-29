@@ -24,6 +24,8 @@ using namespace std;
 void get_send_iphdr(char *);
 void get_send_arphdr(char *);
 struct ether_header switch_hosts(struct ether_header);
+u_int8_t get_ttl(char *);
+void update_ttl(char *);
 
 map<string, string> mac_addrs;
 
@@ -111,6 +113,7 @@ int main(){
     //see packets in both directions. Only outgoing can be seen when
     //using a packet socket with some specific protocol)
     int n = recvfrom(packet_socket, buf, 1500, 0, (struct sockaddr*)&recvaddr, (socklen_t*)&recvaddrlen);
+
     //ignore outgoing packets (we can't disable some from being sent
     //by the OS automatically, for example ICMP port unreachable
     //messages, so we will just ignore them here)
@@ -133,9 +136,13 @@ int main(){
     } else if (recv_ethhdr.ether_type == 0x0008) { // IP
       printf("ethernet type: IP\n");
 
-      get_send_iphdr(buf);
+      if (get_ttl(buf) > 1) {
+		update_ttl(buf);
 
-      send(packet_socket, buf, n, 0);
+		get_send_iphdr(buf);
+
+		send(packet_socket, buf, n, 0);
+      }
     }
   }
   //exit
@@ -212,4 +219,18 @@ struct ether_header switch_hosts(struct ether_header receive) {
   send_ethhdr.ether_type = receive.ether_type;
 
   return send_ethhdr;
+}
+
+u_int8_t get_ttl(char * buf) {
+	struct iphdr ipv4_hdr;
+	memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
+	return ipv4_hdr.ttl;
+}
+
+void update_ttl(char * buf) {
+	struct iphdr ipv4_hdr;
+	memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
+
+	ipv4_hdr.ttl--;
+	memcpy(&buf[sizeof(struct ether_header)], &ipv4_hdr, sizeof(ipv4_hdr));
 }

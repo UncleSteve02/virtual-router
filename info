@@ -22,8 +22,8 @@ PART 2
 -Get packet
 	1. is it for us? if yes, done, else continue
 	2. is checksum correct? if no, drop
-	3. is ttl > 1? if no, drop and send icmp. if yes, reduce ttl (by one), recalc checksum
-	4. check forwaring table. if no match, send icmp error
+	3./is ttl > 1? if no, drop and send icmp. if yes, reduce ttl (by one), recalc checksum
+	4. check forwarding table. if no match, send icmp error
 	5. find dst mac addr using ARP, if none, send icmp error
 	6. assemble packet, send it
 -test part 2
