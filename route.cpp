@@ -38,10 +38,6 @@ using namespace std;
 //--------------------------------------------------------------------
 //----------------------- Function Prototypes ------------------------
 //--------------------------------------------------------------------
-// void get_send_iphdr(char *);
-// void get_send_arphdr(char *);
-u_int8_t get_ttl(char *);
-void update_ttl(char *);
 
 
 //--------------------------------------------------------------------
@@ -197,10 +193,11 @@ int main(){
 
           if (get_ttl(buf) > 1){
             //update_ttl(buf);
+            if (check_checksum(buf)) {
+	            get_send_iphdr(buf);
 
-            get_send_iphdr(buf);
-
-            send(packet_socket, buf, n, 0);
+	            send(packet_socket, buf, n, 0);
+            }
           }
         }
       }
@@ -208,24 +205,4 @@ int main(){
   }
   //exit
   return 0;
-}
-
-//--------------------------------------------------------------------
-//----------------------------- get_ttl ------------------------------
-//--------------------------------------------------------------------
-u_int8_t get_ttl(char * buf) {
-  struct iphdr ipv4_hdr;
-  memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
-  return ipv4_hdr.ttl;
-}
-
-//--------------------------------------------------------------------
-//---------------------------- update_ttl ----------------------------
-//--------------------------------------------------------------------
-void update_ttl(char * buf) {
-  struct iphdr ipv4_hdr;
-  memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
-
-  ipv4_hdr.ttl--;
-  memcpy(&buf[sizeof(struct ether_header)], &ipv4_hdr, sizeof(ipv4_hdr));
 }
