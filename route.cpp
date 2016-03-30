@@ -191,14 +191,22 @@ int main(){
         else if (recv_ethhdr.ether_type == 0x0008) { // IP
           printf("ethernet type: IP\n");
 
-          if (get_ttl(buf) > 1){
-            //update_ttl(buf);
-            if (check_checksum(buf)) {
+          // Verify the IP checksum in the recieved packet. If incorrect, drop the packet.
+	        if (check_checksum(buf)) {
+	        	// Decrement the TTL.
+            update_ttl(buf);
+
+            // If the TTL becomes zero
+          	if (get_ttl(buf) == 1) {
+          		// send back a ICMP time exceeded (TTL exceeded) message and drop the original packet
+			        
+			    	} else { // Otherwise, you must recompute the IP checksum due to the changed TTL.
+		        	check_checksum(buf);
 	            get_send_iphdr(buf);
 
 	            send(packet_socket, buf, n, 0);
-            }
-          }
+		        }	
+	        }
         }
       }
     }
