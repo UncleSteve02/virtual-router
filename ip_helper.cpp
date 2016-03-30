@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <bitset>
-// #include <bool.h>
 
 
 //--------------------------------------------------------------------
@@ -86,10 +85,20 @@ bool check_checksum(char * buf) {
   return (calculated_cs == checksum);
 }
 
+string get_dst_ip(char *buf) {
+	struct iphdr ipv4_hdr;
+  memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
+
+	struct in_addr ip;
+  memcpy(&ip, &ipv4_hdr.daddr, sizeof(ip));
+
+  return string(inet_ntoa(ip));
+}
+
 //--------------------------------------------------------------------
 //---------------------------- update_ttl ----------------------------
 //--------------------------------------------------------------------
-void update_ttl(char * buf) {
+void update_ttl(char *buf) {
   struct iphdr ipv4_hdr;
   memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
 
@@ -100,7 +109,7 @@ void update_ttl(char * buf) {
 //--------------------------------------------------------------------
 //----------------------------- get_ttl ------------------------------
 //--------------------------------------------------------------------
-u_int8_t get_ttl(char * buf) {
+u_int8_t get_ttl(char *buf) {
   struct iphdr ipv4_hdr;
   memcpy(&ipv4_hdr, &buf[sizeof(struct ether_header)], sizeof(ipv4_hdr));
   return ipv4_hdr.ttl;

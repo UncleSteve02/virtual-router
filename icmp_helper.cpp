@@ -50,34 +50,34 @@ struct icmphdr {
 //------------------------- build_icmp_hdr ---------------------------
 //--------------------------------------------------------------------
 int build_icmp_hdr(int job, char *buf) {
-    int ret = 0;
-    struct icmphdr icmp;
-  
-    switch(job){
+  int ret = 0;
+  struct icmphdr icmp;
+
+  switch(job){
 
     case ICMP_PING: // Build ping icmp
-	icmp.type = 0;
-	icmp.code = 0;
-	break;
+      icmp.type = 0;
+      icmp.code = 0;
+      break;
     case ICMP_PREQ: // Build ping request icmp
-	icmp.type = 8;
-	icmp.code = 0;
-	break;
+      icmp.type = 8;
+      icmp.code = 0;
+      break;
     case ICMP_TTLE: // Build time exceeded icmp
-	icmp.type = 11;
-	icmp.code = 0;
-	break;
+      icmp.type = 11;
+      icmp.code = 0;
+      break;
     case ICMP_NETU: // Build network unreachable icmp
-	icmp.type = 3;
-	icmp.code = 0;
-	break;
+      icmp.type = 3;
+      icmp.code = 0;
+      break;
     case ICMP_HSTU: // Build host unreachable icmp
-	icmp.type = 3;
-	icmp.code = 1;
-	break;
-    } 
+      icmp.type = 3;
+      icmp.code = 1;
+      break;
+  } 
 
-    memcpy(&buf[sizeof(struct ether_header)+sizeof(struct iphdr)], &icmp, sizeof(struct icmphdr));
+  memcpy(&buf[sizeof(struct ether_header)+sizeof(struct iphdr)], &icmp, sizeof(struct icmphdr));
 
-    return ret;
+  return ret;
 }
