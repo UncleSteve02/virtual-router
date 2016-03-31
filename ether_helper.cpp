@@ -12,3 +12,21 @@ struct ether_header switch_hosts(struct ether_header receive, const char * mac_a
 
   return send_ethhdr;
 }
+
+void set_eth_addrs(char *buf, const char * dst_addr, const char * src_addr) {
+  struct ether_header eth_hdr;
+
+  memcpy(&eth_hdr, &buf, sizeof(struct ether_header));
+
+  // eth_hdr.ether_dhost = dst_addr;
+  // eth_hdr.ether_shost = src_addr;
+
+  memcpy(eth_hdr.ether_dhost, dst_addr, sizeof(eth_hdr.ether_dhost));
+  memcpy(eth_hdr.ether_shost, src_addr, sizeof(eth_hdr.ether_shost));
+
+  memcpy(&buf, &eth_hdr, sizeof(struct ether_header));
+}
+
+void get_src_addr(char *buf, char *dst_addr) {
+  memcpy(&dst_addr, &buf[sizeof(dst_addr)], sizeof(dst_addr));
+}
