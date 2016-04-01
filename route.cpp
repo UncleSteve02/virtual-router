@@ -24,6 +24,7 @@
 #include <cstring>
 #include <map>
 #include <iostream>
+#include <thread>
 #include <arpa/inet.h>
 #include "ether_helper.cpp"
 #include "arp_helper.cpp"
@@ -364,10 +365,17 @@ int get_routing_table_ref(char *router_name, char *dest_ip, char *interface_name
   return ret;
 }
 
-int get_mac_addr(char *interface_name, char* arp_ip, u_int8_t *dest_mac){
-
+void receive_packet(int *n, int i, char *buf) {
 	struct sockaddr_ll recvaddr;
   int recvaddrlen=sizeof(struct sockaddr_ll);  
+
+  int temp_n = recvfrom(i, buf, 1500, 0, (struct sockaddr*)&recvaddr, (socklen_t*)&recvaddrlen);
+
+	memcpy(n, &temp_n, sizeof(temp_n));
+	// n = recvfrom(i, buf, 1500, 0, (struct sockaddr*)&recvaddr, (socklen_t*)&recvaddrlen);
+}
+
+int get_mac_addr(char *interface_name, char* arp_ip, u_int8_t *dest_mac){
   int ret = 0;
   int bufPos = 0;
   struct ether_header send_ethhdr;
@@ -409,14 +417,8 @@ int get_mac_addr(char *interface_name, char* arp_ip, u_int8_t *dest_mac){
   // Send arp message 
   int i;
   for (i = 0; i < FD_SETSIZE; i++) {
-  	printf("<%d>: ", i);
-
     if (strlen(interfaces[i].c_str()) > 0) {
-	  	printf("<%s> ", interfaces[i].c_str());
-
       if (!strcmp(interfaces[i].c_str(), interface_name)) {
-  			printf("AHA!\n");
-
         ret = send(i, buf, bufPos, 0);
         break;
       }
@@ -424,20 +426,21 @@ int get_mac_addr(char *interface_name, char* arp_ip, u_int8_t *dest_mac){
   }
 
   // Wait one second if nothing is recieved return error
-
-  // Read arp reply and get mac address
   int n = 0;
-  int count = 0;
-  while (n == 0 && count < 5000) {
-  	n = recvfrom(i, buf, 1500, 0, (struct sockaddr*)&recvaddr, (socklen_t*)&recvaddrlen);
-  	count++;
-  }
-  if (n > 0) {
+  clock_t one_sec_from_now;
+  one_sec_from_now = clock() + CLOCKS_PER_SEC; // Set to one second from now
+
+  thread receive (receive_packet, &n, i, buf);
+  while (clock() < one_sec_from_now && n == 0);
+  receive.detach();
+  
+	if (n > 0) {
   	ret = 0;
   } else {
   	ret = -1;
   }
   
+  // Read arp reply and get mac address
   memcpy(dest_mac, &buf[ETH_ALEN], ETH_ALEN);
 
   return ret;
