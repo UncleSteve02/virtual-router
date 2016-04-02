@@ -227,28 +227,16 @@ int main(){
 
             } else { // Otherwise, you must recompute the IP checksum due to the changed TTL.
               if (is_for_me(get_dst_ip(buf))) {
-<<<<<<< HEAD
-                printf("its all mine!\n");
-		memcpy(&tmp_iphdr, &buf[sizeof(struct ether_header)], sizeof(struct iphdr)); 
-		// ckeck to see if it is a ping if not then do nothing 
-		if( tmp_iphdr.protocol != 0x01 ||  buf[sizeof(struct ether_header)+sizeof(struct iphdr)] != 0x08){
-		    continue;
-		}
-		// If it is a ping reformate the ip head and icmp header 
-		build_icmp_hdr(ICMP_PING, buf);
-              	get_send_iphdr(buf);
-		strcpy(interface_name, interfaces[packet_socket].c_str());
-=======
+                  printf("its all mine!\n");
                 memcpy(&tmp_iphdr, &buf[sizeof(struct ether_header)], sizeof(struct iphdr)); 
                 // ckeck to see if it is a ping if not then do nothing 
-                if( tmp_iphdr.protocol != 0x01){
+                if( tmp_iphdr.protocol != 0x01 ||  buf[sizeof(struct ether_header)+sizeof(struct iphdr)] != 0x08){
                   continue;
                 }
                 // If it is a ping reformate the ip head and icmp header 
                 build_icmp_hdr(ICMP_PING, buf);
                 get_send_iphdr(buf);
                 strcpy(interface_name, interfaces[packet_socket].c_str());
->>>>>>> 2bcab123354f91846b1b8c6314ff87300c650ddc
               } else {
                 // Check routing table and get interface and ip 
                 err = get_routing_table_ref((char *)get_router_name().c_str(), (char *)get_dst_ip(buf).c_str(), interface_name, arp_ip);
